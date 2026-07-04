@@ -148,30 +148,40 @@ client.on('messageCreate', async (message) => {
 
 // ---- Interaction handling ----
 client.on('interactionCreate', async (interaction) => {
-  if (interaction.isButton()) {
-    const categoryKey = Object.keys(CATEGORIES).find((key) => CATEGORIES[key].buttonCustomId === interaction.customId);
-    if (categoryKey) {
-      return sendCategoryMenu(interaction, categoryKey, false);
+  try {
+    if (interaction.isButton()) {
+      const categoryKey = Object.keys(CATEGORIES).find((key) => CATEGORIES[key].buttonCustomId === interaction.customId);
+      if (categoryKey) {
+        return await sendCategoryMenu(interaction, categoryKey, false);
+      }
+
+      const config = ROLE_BUTTONS.find((r) => r.customId === interaction.customId);
+      if (!config) return;
+
+      const role = findRole(interaction.guild, config.roleName);
+      if (!role) {
+        return interaction.reply({
+          content: `⚠️ The role **${config.roleName}** doesn't exist yet. Ask an admin to create it.`,
+          ephemeral: true,
+        });
+      }
+
+      return await toggleSingleRole(interaction, role, config.roleName);
     }
 
-    const config = ROLE_BUTTONS.find((r) => r.customId === interaction.customId);
-    if (!config) return;
-
-    const role = findRole(interaction.guild, config.roleName);
-    if (!role) {
-      return interaction.reply({
-        content: `⚠️ The role **${config.roleName}** doesn't exist yet. Ask an admin to create it.`,
-        ephemeral: true,
-      });
+    if (interaction.isStringSelectMenu()) {
+      const categoryKey = Object.keys(CATEGORIES).find((key) => CATEGORIES[key].selectCustomId === interaction.customId);
+      if (categoryKey) {
+        return await handleCategorySelect(interaction, categoryKey);
+      }
     }
-
-    return toggleSingleRole(interaction, role, config.roleName);
-  }
-
-  if (interaction.isStringSelectMenu()) {
-    const categoryKey = Object.keys(CATEGORIES).find((key) => CATEGORIES[key].selectCustomId === interaction.customId);
-    if (categoryKey) {
-      return handleCategorySelect(interaction, categoryKey);
+  } catch (err) {
+    console.error('Interaction error:', err);
+    const payload = { content: '⚠️ Something went wrong handling that. Check the bot logs for details.', ephemeral: true };
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp(payload).catch(() => {});
+    } else {
+      await interaction.reply(payload).catch(() => {});
     }
   }
 });
@@ -212,7 +222,7 @@ function buildCategorySelectRow(categoryKey, member) {
           description: r.description,
           default: memberHasRoleName(member, r.roleName), // pre-checked / highlighted
         };
-        if (r.emoji) option.emoji = r.emoji;
+        if (isValidEmoji(r.emoji)) option.emoji = r.emoji;
         return option;
       })
     );
@@ -269,6 +279,13 @@ async function handleCategorySelect(interaction, categoryKey) {
 
 function findRole(guild, name) {
   return guild.roles.cache.find((r) => r.name === name);
+}
+
+// A real Discord snowflake ID is a string of digits (typically 17-20 long).
+// This catches leftover placeholders like "PUT_EMOJI_ID_HERE" so we don't
+// send Discord an invalid emoji and have the whole interaction silently fail.
+function isValidEmoji(emoji) {
+  return !!emoji && typeof emoji.id === 'string' && /^\d{15,25}$/.test(emoji.id);
 }
 
 function memberHasRoleName(member, roleName) {
