@@ -2,7 +2,7 @@
 
 A Discord bot that posts a button menu so people can self-assign OSRS
 event roles. "Bossing" and "Raids" are categories — clicking either opens
-a private dropdown just for that user to pick specific bosses/raids.
+a private menu just for that user, with one toggle button per boss/raid.
 Once someone has a role, anyone can `@mention` it to ping everyone who
 wants that event.
 
@@ -17,18 +17,15 @@ wants that event.
 
 ## 2. Create the roles in your server
 In Server Settings → Roles, create roles with these exact names (or edit
-`ROLE_BUTTONS` / `CATEGORIES` in `index.js` to match your own names):
+`CATEGORIES` in `index.js` to match your own names):
 
-Simple toggle role:
-- PvP Events
-
-Bossing (picked from the private "Bossing" submenu):
+Bossing (picked from the private "Bossing" menu):
 - Yama
 - Nightmare
 - Royal Titans
 - Hueycoatl
 
-Raids (picked from the private "Raids" submenu):
+Raids (picked from the private "Raids" menu):
 - CoX
 - ToA
 - ToB
@@ -60,6 +57,8 @@ emojis** you upload yourself:
    emoji: { name: 'yami', id: '1234567890123456789' }
    ```
    If the pet image is animated (a `.gif`), also add `animated: true`.
+   Until you do this, the bot skips the emoji automatically and just shows
+   the plain text label — it won't break anything.
 
 ## 3. Install and run
 ```bash
@@ -69,40 +68,24 @@ cp .env.example .env
 npm start
 ```
 
-`.env` holds:
-- `DISCORD_BOT_TOKEN` — your bot's token (never commit this or share it in chat/screenshots — a `.gitignore` is included so it won't get pushed to GitHub)
-- `CLIENT_ID` — your application's client ID (public, safe to share)
-- `CLAN_ID` — your server's guild ID
-- `OWNER_ID` — your own Discord user ID; this user can always run `!setup-roles`, even without a matching role
-- `OWNER_ROLE_ID` / `COORDINATOR_ROLE_ID` / `TEMPLAR_ROLE_ID` — role IDs that are also allowed to run `!setup-roles`
-
 ## 4. Post the role menu
 In the channel where you want the menu, type:
 ```
 !setup-roles
 ```
-Anyone can run this command right now — no permission check. The bot posts
-an embed with buttons — **Bossing** and **Raids** open a private
-multi-select dropdown, **PvP / Wilderness** toggles directly.
+Anyone can run this — no permission check. The bot posts an embed with
+**Bossing** and **Raids** buttons.
 
-### Re-enabling a permission check (optional)
-If you want to lock `!setup-roles` down later, open `index.js` and set:
-```js
-const REQUIRE_SETUP_PERMISSION = true;
-```
-This turns permission checking back on: anyone with **Manage Roles**, the
-Owner/Coordinator/Templar role, or the user matching `OWNER_ID` in `.env`
-will be allowed to run it — everyone else gets a polite refusal.
-
-## How the category submenus work
-Clicking **🐉 Bossing** or **🏆 Raids** opens a private dropdown (only you
-can see it) listing that category's roles. Items you already have show a
-checkmark. Pick/unpick and the bot updates your roles, then re-shows the
-same dropdown with the checkmarks refreshed — so your selections stay
-visibly checked until you remove them.
+- Clicking a category button opens a private menu (only you see it) with
+  one button per boss/raid.
+- Clicking a boss/raid button toggles that role on/off for you. Selected
+  ones turn **red** and stay red until you click them again to remove them.
+- The original menu message in the channel **auto-deletes after 60 seconds**.
+  This only removes the message — any roles you've already picked stay
+  assigned regardless.
 
 ## Customizing
-- Edit `ROLE_BUTTONS` to add/remove simple top-level toggle roles.
+- Edit `MENU_MESSAGE_LIFETIME_MS` to change how long the menu message stays
+  posted before auto-deleting (in milliseconds; default is 60000 = 60s).
 - Edit `CATEGORIES` to add/remove categories entirely, or add/remove roles
-  within `bossing.roles` / `raids.roles` (label, description, role name,
-  optional emoji).
+  within `bossing.roles` / `raids.roles` (label, role name, optional emoji).
