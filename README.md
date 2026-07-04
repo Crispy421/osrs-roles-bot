@@ -80,9 +80,12 @@ Anyone can run this — no permission check. The bot posts an embed with
   one button per boss/raid.
 - Clicking a boss/raid button toggles that role on/off for you. Selected
   ones turn **red** and stay red until you click them again to remove them.
-- The original menu message in the channel **auto-deletes after 60 seconds**.
-  This only removes the message — any roles you've already picked stay
-  assigned regardless.
+- Your `!setup-roles` command message is deleted automatically once the
+  bot successfully posts the menu (if posting fails for some reason, your
+  command message is left in place so you can see the error and retry).
+- The public role-menu message, **and** each private Bossing/Raids submenu,
+  auto-delete after 60 seconds. This only removes the messages — any roles
+  you've already picked stay assigned regardless.
 
 ## Customizing
 - Edit `MENU_MESSAGE_LIFETIME_MS` to change how long the menu message stays

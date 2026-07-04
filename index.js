@@ -33,8 +33,9 @@ const {
   PermissionsBitField,
 } = require('discord.js');
 
-// How long the posted role-menu message stays in the channel before
-// auto-deleting. Roles already assigned are unaffected by this.
+// How long posted messages stay before auto-deleting: the public role-menu
+// message in the channel, AND each private Bossing/Raids submenu. Roles
+// already assigned are unaffected either way.
 const MENU_MESSAGE_LIFETIME_MS = 60 * 1000;
 
 // ---- Category definitions ----
@@ -109,12 +110,21 @@ client.on('messageCreate', async (message) => {
 
   const row = new ActionRowBuilder().addComponents(categoryButtons);
 
-  const sentMessage = await message.channel.send({ embeds: [embed], components: [row] });
-  await message.delete().catch(() => {});
+  try {
+    const sentMessage = await message.channel.send({ embeds: [embed], components: [row] });
 
-  setTimeout(() => {
-    sentMessage.delete().catch(() => {});
-  }, MENU_MESSAGE_LIFETIME_MS);
+    // Successfully posted — now delete the user's !setup-roles command message.
+    await message.delete().catch(() => {});
+
+    // Auto-delete the posted menu message after 60 seconds.
+    // This only removes the message — any roles already assigned stay.
+    setTimeout(() => {
+      sentMessage.delete().catch(() => {});
+    }, MENU_MESSAGE_LIFETIME_MS);
+  } catch (err) {
+    console.error('Failed to post role menu:', err);
+    // Leave the command message in place if posting failed, so the user can see it and retry.
+  }
 });
 
 // ---- Interaction handling ----
@@ -171,6 +181,12 @@ async function sendCategoryMenu(interaction, categoryKey, isUpdate) {
   } else {
     await interaction.reply(payload);
   }
+
+  // Auto-delete this private submenu message after 60 seconds.
+  // This only removes the message — any roles already picked stay assigned.
+  setTimeout(() => {
+    interaction.deleteReply().catch(() => {});
+  }, MENU_MESSAGE_LIFETIME_MS);
 }
 
 async function handleRoleToggle(interaction, categoryKey, value) {
