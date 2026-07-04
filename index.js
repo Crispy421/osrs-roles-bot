@@ -113,8 +113,10 @@ client.on('messageCreate', async (message) => {
   try {
     const sentMessage = await message.channel.send({ embeds: [embed], components: [row] });
 
-    // Successfully posted — now delete the user's !setup-roles command message.
-    await message.delete().catch(() => {});
+    // Successfully posted — delete the user's !setup-roles command message after 5 seconds.
+    setTimeout(() => {
+      message.delete().catch(() => {});
+    }, 5000);
 
     // Auto-delete the posted menu message after 60 seconds.
     // This only removes the message — any roles already assigned stay.
