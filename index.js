@@ -53,10 +53,10 @@ const CATEGORIES = {
     // so these must be CUSTOM emojis uploaded to your server. Upload the
     // pet image, then replace PUT_EMOJI_ID_HERE with its real ID (see README).
     roles: [
-      { value: 'yama', label: 'Yama', emoji: { name: 'yami', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Yama' },
-      { value: 'nightmare', label: 'Nightmare', emoji: { name: 'littlenightmare', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Nightmare' },
-      { value: 'royal_titans', label: 'Royal Titans', emoji: { name: 'branric', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Royal Titans' },
-      { value: 'hueycoatl', label: 'Hueycoatl', emoji: { name: 'huberte', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Hueycoatl' },
+      { value: 'yama', label: 'Yama', emoji: { name: 'yami', id: '1381816093336801340' }, roleName: 'Yama' },
+      { value: 'nightmare', label: 'Nightmare', emoji: { name: 'littlenightmare', id: '1381713659486539877' }, roleName: 'Nightmare' },
+      { value: 'royal_titans', label: 'Royal Titans', emoji: { name: 'branric', id: '1381713565261500426' }, roleName: 'Royal Titans' },
+      { value: 'hueycoatl', label: 'Hueycoatl', emoji: { name: 'huberte', id: '1381713619120685196' }, roleName: 'Hueycoatl' },
     ],
   },
   raids: {
@@ -66,9 +66,9 @@ const CATEGORIES = {
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the raids you want to be pingable for. Selected ones turn red and stay red until you click them again.',
     roles: [
-      { value: 'cox', label: 'CoX', emoji: { name: 'olmlet', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'CoX' },
+      { value: 'cox', label: 'CoX', emoji: { name: 'olmlet', id: '1381713947534819418' }, roleName: 'CoX' },
       { value: 'toa', label: 'ToA', emoji: { name: 'tumekensguardian', id: '1381728693445066862' }, roleName: 'ToA' },
-      { value: 'tob', label: 'ToB', emoji: { name: 'lilzik', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'ToB' },
+      { value: 'tob', label: 'ToB', emoji: { name: 'lilzik', id: '1381713627568144425' }, roleName: 'ToB' },
     ],
   },
 };
