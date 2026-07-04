@@ -62,7 +62,7 @@ const CATEGORIES = {
   raids: {
     buttonCustomId: 'category_raids',
     buttonLabel: 'Raids',
-    buttonEmoji: '🏆',
+    buttonEmoji: '1381713946591105187',
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the raids you want to be pingable for. Selected ones turn red and stay red until you click them again.',
     roles: [
