@@ -1,0 +1,13 @@
+{
+  "name": "osrs-role-menu-bot",
+  "version": "1.0.0",
+  "description": "Discord bot for OSRS event self-assignable roles via buttons",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5"
+  }
+}
