@@ -1,10 +1,11 @@
 # OSRS Event Role Menu Bot
 
-A Discord bot that posts a button menu so people can self-assign OSRS
-event roles. "Bossing" and "Raids" are categories — clicking either opens
-a private menu just for that user, with one toggle button per boss/raid.
-Once someone has a role, anyone can `@mention` it to ping everyone who
-wants that event.
+A Discord bot for self-assigning OSRS event roles. When someone types
+`!setup-roles` in a server channel, the bot **DMs them a private
+"Looking For Team" menu** — visible only to that person. "Bossing" and
+"Raids" are categories: clicking either opens a follow-up private menu
+with one toggle button per boss/raid. Once someone has a role, anyone can
+`@mention` it to ping everyone who wants that event.
 
 ## 1. Create the Discord application
 1. Go to https://discord.com/developers/applications → **New Application**.
@@ -14,8 +15,7 @@ wants that event.
 4. Go to **OAuth2 → URL Generator**, check scopes `bot`, and permissions
    `Manage Roles`, `Send Messages`, `View Channels`, `Embed Links`,
    `Manage Messages` (needed so the bot can delete the `!setup-roles`
-   command message and auto-delete the role-menu message). Use the
-   generated URL to invite the bot to your server.
+   command message). Use the generated URL to invite the bot to your server.
 
    **If the bot is already in your server** and just needs `Manage
    Messages` added, you don't need to re-invite it — just go to Server
@@ -75,29 +75,34 @@ cp .env.example .env
 npm start
 ```
 
+`.env` must include `CLAN_ID` (your server's guild ID). Since the role
+menu is delivered by DM, button clicks there carry no server context on
+their own — the bot uses `CLAN_ID` to look up your server directly and
+fetch the clicking user as a member of it, so role assignment still works.
+
 ## 4. Post the role menu
-In the channel where you want the menu, type:
+In any server channel, type:
 ```
 !setup-roles
 ```
-Anyone can run this — no permission check. The bot posts an embed with
-**Bossing** and **Raids** buttons.
+Anyone can run this — no permission check. Instead of posting in the
+channel, **the bot DMs the person who ran it** a "Looking For Team" menu
+with **Bossing** and **Raids** buttons — private to them only.
 
-- Clicking a category button opens a private menu (only you see it) with
-  one button per boss/raid.
-- Clicking a boss/raid button toggles that role on/off for you. Selected
-  ones turn **red** and stay red until you click them again to remove them.
-- Your `!setup-roles` command message is deleted automatically 5 seconds
-  after the bot successfully posts the menu (if posting fails for some
-  reason, your command message is left in place so you can see the error
-  and retry).
-- The public role-menu message, **and** each private Bossing/Raids submenu,
-  auto-delete after 60 seconds. This only removes the messages — any roles
-  you've already picked stay assigned regardless.
+- Clicking a category button opens a private follow-up menu with one
+  button per boss/raid.
+- Clicking a boss/raid button toggles that role on/off for the user.
+  Selected ones turn **red** and stay red until clicked again to remove them.
+- Your `!setup-roles` command message in the channel is deleted
+  automatically 5 seconds after the DM is successfully sent (if the DM
+  fails — e.g. you have server DMs disabled — your command message is
+  left in place, and a short-lived notice explains why).
+- The DM menu message auto-deletes after 60 seconds. This only removes the
+  message — any roles already picked stay assigned regardless.
 
 ## Customizing
-- Edit `MENU_MESSAGE_LIFETIME_MS` to change how long the menu message stays
-  posted before auto-deleting (in milliseconds; default is 60000 = 60s).
+- Edit `MENU_MESSAGE_LIFETIME_MS` to change how long the DM menu stays
+  before auto-deleting (in milliseconds; default is 60000 = 60s).
 - Edit `CATEGORIES` to add/remove categories entirely, or add/remove roles
   within `bossing.roles` / `raids.roles` (label, role name, optional emoji).
 - The top-level **Bossing** button uses a custom emoji (ID
@@ -107,12 +112,18 @@ Anyone can run this — no permission check. The bot posts an embed with
   ID, but keeping the name accurate avoids any rendering hiccups.
 - The top-level **Raids** button uses the 💰 money bags emoji.
 
-## Troubleshooting: "the !setup-roles message isn't deleting"
+## Troubleshooting
+
+**"The bot didn't DM me anything"**
+- Check your Discord privacy settings: User Settings → Privacy & Safety →
+  make sure "Allow direct messages from server members" is on for this server.
+- Check the bot's logs for `Failed to DM role menu` for the specific error.
+
+**"The !setup-roles message isn't deleting"**
 This almost always means the bot is missing the **Manage Messages**
-permission in that channel (deleting a message it didn't send, or in some
-cases even its own message, requires it). Check your bot's logs — it
-logs an error like `Could not delete !setup-roles command message (likely
-missing Manage Messages permission)` when this happens.
+permission in that channel. Check your bot's logs — it logs an error like
+`Could not delete !setup-roles command message (likely missing Manage
+Messages permission)` when this happens.
 
 **Fix (confirmed working):** Server Settings → Roles → click the bot's
 role → toggle on **Manage Messages**. No re-invite needed, takes effect
@@ -121,3 +132,7 @@ immediately.
 If that role-level toggle doesn't fix it, also check the specific
 channel's permission overrides — a channel can override and deny
 **Manage Messages** for the bot's role even if it's enabled server-wide.
+
+**"Clicking Bossing/Raids says it can't find my membership"**
+Double-check `CLAN_ID` in `.env` matches your server's actual guild ID,
+and that the bot is still a member of that server.
