@@ -1,25 +1,31 @@
 /**
  * OSRS Event Role Assignment Bot
  * -------------------------------
- * Posts a message with buttons in a channel. "Bossing" and "Raids" are
- * categories: clicking either opens a private (ephemeral) menu just for
- * that user, with one toggle button per boss/raid. Selected ones turn
- * RED (Danger style) and stay red until clicked again to deselect —
- * the menu re-opens/refreshes showing red for whatever roles the user
- * currently holds.
+ * When a user types !setup-roles in a server channel, the bot DMs them a
+ * private "Looking For Team" role menu — visible only to that user, since
+ * a normal channel message can't be made private, but a DM naturally is.
+ * "Bossing" and "Raids" are categories: clicking either opens a follow-up
+ * private menu with one toggle button per boss/raid. Selected ones turn
+ * RED (Danger style) and stay red until clicked again to deselect.
  *
- * The original role-menu message in the channel auto-deletes itself
- * 60 seconds after being posted. This has no effect on roles already
- * assigned — deleting the message does not remove anyone's roles.
+ * Because the menu lives in a DM, button clicks carry no guild/role
+ * context on their own — the bot resolves the target server using
+ * CLAN_ID from .env and fetches the clicking user as a member of that
+ * server directly, so role assignment still works correctly.
+ *
+ * The DM menu message auto-deletes itself 60 seconds after being sent.
+ * This has no effect on roles already assigned — deleting the message
+ * does not remove anyone's roles.
  *
  * Setup:
  *  1. npm install
- *  2. Copy .env.example to .env and fill in DISCORD_BOT_TOKEN etc.
+ *  2. Copy .env.example to .env and fill in DISCORD_BOT_TOKEN, CLAN_ID, etc.
  *  3. Create all roles listed below in your server (exact names)
  *  4. Invite the bot with "Manage Roles", and drag its role ABOVE
  *     all roles it needs to assign
  *  5. node index.js
- *  6. In the target channel, type: !setup-roles (anyone can run this)
+ *  6. In any server channel, type: !setup-roles (anyone can run this) —
+ *     the bot DMs you the menu privately.
  */
 
 require('dotenv').config();
@@ -30,18 +36,20 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  PermissionsBitField,
 } = require('discord.js');
 
-// How long posted messages stay before auto-deleting: the public role-menu
-// message in the channel, AND each private Bossing/Raids submenu. Roles
-// already assigned are unaffected either way.
+// How long the DM menu message stays before auto-deleting. Roles already
+// assigned are unaffected either way.
 const MENU_MESSAGE_LIFETIME_MS = 60 * 1000;
+
+// The server this bot manages roles in. Needed because DM interactions
+// carry no guild context on their own.
+const TARGET_GUILD_ID = process.env.CLAN_ID;
 
 // ---- Category definitions ----
 // Each category gets its own top-level button, which opens a private
-// message with one toggle button per role. Role names must exactly
-// match roles that exist in your server.
+// menu with one toggle button per role. Role names must exactly match
+// roles that exist in your server.
 const CATEGORIES = {
   bossing: {
     buttonCustomId: 'category_bossing',
@@ -79,27 +87,65 @@ const client = new Client({
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
+  if (!TARGET_GUILD_ID) {
+    console.warn('⚠️  CLAN_ID is not set in .env — role assignment from DMs will fail until you set it.');
+  }
 });
 
-// ---- Command to post the role menu: !setup-roles ----
+// ---- Command to DM the role menu: !setup-roles ----
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
   if (message.content.trim() !== '!setup-roles') return;
 
   // Anyone can run !setup-roles — no permission check.
 
-  const embed = new EmbedBuilder()
-    .setTitle('⚔️ OSRS Event Roles')
+  const embed = buildMenuEmbed();
+  const row = buildCategoryButtonsRow();
+
+  try {
+    const dmMessage = await message.author.send({ embeds: [embed], components: [row] });
+
+    // Successfully DM'd — delete the user's !setup-roles command message after 5 seconds.
+    setTimeout(() => {
+      message.delete().catch((err) => {
+        console.error('Could not delete !setup-roles command message (likely missing Manage Messages permission):', err.message);
+      });
+    }, 5000);
+
+    // Auto-delete the DM menu message after 60 seconds.
+    // This only removes the message — any roles already assigned stay.
+    setTimeout(() => {
+      dmMessage.delete().catch((err) => {
+        console.error('Could not delete DM role-menu message:', err.message);
+      });
+    }, MENU_MESSAGE_LIFETIME_MS);
+  } catch (err) {
+    console.error('Failed to DM role menu:', err);
+    // Post a short-lived notice in the channel so the user knows why nothing happened.
+    const notice = await message.channel
+      .send(`⚠️ ${message.author}, I couldn't DM you the role menu. Please enable **Direct Messages from server members** and try again.`)
+      .catch(() => null);
+    if (notice) {
+      setTimeout(() => notice.delete().catch(() => {}), 10000);
+    }
+  }
+});
+
+function buildMenuEmbed() {
+  return new EmbedBuilder()
+    .setTitle('Looking For Team')
     .setDescription(
-      'Click **Bossing** or **💰 Raids** to pick specific bosses/raids ' +
-      'from a private menu. Selected ones turn red.\n\n' +
+      'Click **Bossing** or **💰 Raids** to pick specific bosses/raids. ' +
+      'Selected ones turn red.\n\n' +
       'Once you have a role, anyone can `@mention` it to notify everyone ' +
       'signed up when that event is happening.\n\n' +
       '_This message will delete itself in 60 seconds — your roles stay either way._'
     )
     .setColor(0xc2a24c)
     .setFooter({ text: 'Old School RuneScape Event Notifications' });
+}
 
+function buildCategoryButtonsRow() {
   const categoryButtons = Object.values(CATEGORIES).map((cat) =>
     new ButtonBuilder()
       .setCustomId(cat.buttonCustomId)
@@ -107,31 +153,8 @@ client.on('messageCreate', async (message) => {
       .setEmoji(cat.buttonEmoji)
       .setStyle(cat.buttonStyle)
   );
-
-  const row = new ActionRowBuilder().addComponents(categoryButtons);
-
-  try {
-    const sentMessage = await message.channel.send({ embeds: [embed], components: [row] });
-
-    // Successfully posted — delete the user's !setup-roles command message after 5 seconds.
-    setTimeout(() => {
-      message.delete().catch((err) => {
-        console.error('Could not delete !setup-roles command message (likely missing Manage Messages permission):', err.message);
-      });
-    }, 5000);
-
-    // Auto-delete the posted menu message after 60 seconds.
-    // This only removes the message — any roles already assigned stay.
-    setTimeout(() => {
-      sentMessage.delete().catch((err) => {
-        console.error('Could not delete role-menu message (likely missing Manage Messages permission):', err.message);
-      });
-    }, MENU_MESSAGE_LIFETIME_MS);
-  } catch (err) {
-    console.error('Failed to post role menu:', err);
-    // Leave the command message in place if posting failed, so the user can see it and retry.
-  }
-});
+  return new ActionRowBuilder().addComponents(categoryButtons);
+}
 
 // ---- Interaction handling ----
 client.on('interactionCreate', async (interaction) => {
@@ -160,6 +183,17 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+// Resolve the target guild + the clicking user as a member of it, since
+// DM-based interactions carry no guild context of their own.
+async function resolveGuildMember(userId) {
+  if (!TARGET_GUILD_ID) {
+    throw new Error('CLAN_ID is not set in .env');
+  }
+  const guild = client.guilds.cache.get(TARGET_GUILD_ID) ?? (await client.guilds.fetch(TARGET_GUILD_ID));
+  const member = await guild.members.fetch(userId);
+  return { guild, member };
+}
+
 // Build the row(s) of toggle buttons for a category, red if the user already has that role
 function buildCategoryButtonRows(categoryKey, member) {
   const category = CATEGORIES[categoryKey];
@@ -179,7 +213,17 @@ function buildCategoryButtonRows(categoryKey, member) {
 
 async function sendCategoryMenu(interaction, categoryKey, isUpdate) {
   const category = CATEGORIES[categoryKey];
-  const rows = buildCategoryButtonRows(categoryKey, interaction.member);
+
+  let member;
+  try {
+    ({ member } = await resolveGuildMember(interaction.user.id));
+  } catch (err) {
+    console.error('Could not resolve guild member:', err.message);
+    const payload = { content: '⚠️ I couldn\'t find your membership in the server. Make sure CLAN_ID is set correctly and you\'re still a member.', ephemeral: true };
+    return isUpdate ? interaction.update(payload) : interaction.reply(payload);
+  }
+
+  const rows = buildCategoryButtonRows(categoryKey, member);
   const payload = { content: category.prompt, components: rows, ephemeral: true };
 
   if (isUpdate) {
@@ -204,10 +248,18 @@ async function handleRoleToggle(interaction, categoryKey, value) {
   const roleConfig = category.roles.find((r) => r.value === value);
   if (!roleConfig) return;
 
-  const guild = interaction.guild;
-  const member = interaction.member;
-  const role = findRole(guild, roleConfig.roleName);
+  let guild, member;
+  try {
+    ({ guild, member } = await resolveGuildMember(interaction.user.id));
+  } catch (err) {
+    console.error('Could not resolve guild member:', err.message);
+    return interaction.reply({
+      content: '⚠️ I couldn\'t find your membership in the server. Make sure CLAN_ID is set correctly and you\'re still a member.',
+      ephemeral: true,
+    });
+  }
 
+  const role = findRole(guild, roleConfig.roleName);
   if (!role) {
     return interaction.reply({
       content: `⚠️ The role **${roleConfig.roleName}** doesn't exist yet. Ask an admin to create it.`,
