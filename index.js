@@ -45,8 +45,8 @@ const MENU_MESSAGE_LIFETIME_MS = 60 * 1000;
 const CATEGORIES = {
   bossing: {
     buttonCustomId: 'category_bossing',
-    buttonLabel: 'Bossing',
-    buttonEmoji: '🐉',
+    buttonLabel: 'Bosses',
+    buttonEmoji: '1381713946591105187',
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the bosses you want to be pingable for. Selected ones turn red and stay red until you click them again.',
     // Emojis are each boss's pet. Discord has no built-in OSRS pet emojis,
@@ -62,7 +62,7 @@ const CATEGORIES = {
   raids: {
     buttonCustomId: 'category_raids',
     buttonLabel: 'Raids',
-    buttonEmoji: '1381713946591105187',
+    buttonEmoji: '1523116618249670696',
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the raids you want to be pingable for. Selected ones turn red and stay red until you click them again.',
     roles: [
