@@ -45,7 +45,7 @@ const MENU_MESSAGE_LIFETIME_MS = 60 * 1000;
 const CATEGORIES = {
   bossing: {
     buttonCustomId: 'category_bossing',
-    buttonLabel: 'Bosses',
+    buttonLabel: 'Bossing',
     buttonEmoji: '1381713946591105187',
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the bosses you want to be pingable for. Selected ones turn red and stay red until you click them again.',
