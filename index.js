@@ -46,29 +46,29 @@ const CATEGORIES = {
   bossing: {
     buttonCustomId: 'category_bossing',
     buttonLabel: 'Bossing',
-    buttonEmoji: '1381713946591105187',
+    buttonEmoji: { name: 'bossing', id: '1381713946591105187' },
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the bosses you want to be pingable for. Selected ones turn red and stay red until you click them again.',
     // Emojis are each boss's pet. Discord has no built-in OSRS pet emojis,
     // so these must be CUSTOM emojis uploaded to your server. Upload the
     // pet image, then replace PUT_EMOJI_ID_HERE with its real ID (see README).
     roles: [
-      { value: 'yama', label: 'Yama', emoji: { name: 'yami', id: '1381816093336801340' }, roleName: 'Yama' },
-      { value: 'nightmare', label: 'Nightmare', emoji: { name: 'littlenightmare', id: '1381713659486539877' }, roleName: 'Nightmare' },
-      { value: 'royal_titans', label: 'Royal Titans', emoji: { name: 'branric', id: '1381713565261500426' }, roleName: 'Royal Titans' },
-      { value: 'hueycoatl', label: 'Hueycoatl', emoji: { name: 'huberte', id: '1381713619120685196' }, roleName: 'Hueycoatl' },
+      { value: 'yama', label: 'Yama', emoji: { name: 'yami', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Yama' },
+      { value: 'nightmare', label: 'Nightmare', emoji: { name: 'littlenightmare', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Nightmare' },
+      { value: 'royal_titans', label: 'Royal Titans', emoji: { name: 'branric', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Royal Titans' },
+      { value: 'hueycoatl', label: 'Hueycoatl', emoji: { name: 'huberte', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'Hueycoatl' },
     ],
   },
   raids: {
     buttonCustomId: 'category_raids',
     buttonLabel: 'Raids',
-    buttonEmoji: '1523116618249670696',
+    buttonEmoji: '💰',
     buttonStyle: ButtonStyle.Primary,
     prompt: 'Pick the raids you want to be pingable for. Selected ones turn red and stay red until you click them again.',
     roles: [
-      { value: 'cox', label: 'CoX', emoji: { name: 'olmlet', id: '1381713947534819418' }, roleName: 'CoX' },
-      { value: 'toa', label: 'ToA', emoji: { name: 'tumekensguardian', id: '1381728693445066862' }, roleName: 'ToA' },
-      { value: 'tob', label: 'ToB', emoji: { name: 'lilzik', id: '1381713627568144425' }, roleName: 'ToB' },
+      { value: 'cox', label: 'CoX', emoji: { name: 'olmlet', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'CoX' },
+      { value: 'toa', label: 'ToA', emoji: { name: 'tumekensguardian', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'ToA' },
+      { value: 'tob', label: 'ToB', emoji: { name: 'lilzik', id: 'PUT_EMOJI_ID_HERE' }, roleName: 'ToB' },
     ],
   },
 };
@@ -91,7 +91,7 @@ client.on('messageCreate', async (message) => {
   const embed = new EmbedBuilder()
     .setTitle('⚔️ OSRS Event Roles')
     .setDescription(
-      'Click **🐉 Bossing** or **🏆 Raids** to pick specific bosses/raids ' +
+      'Click **Bossing** or **💰 Raids** to pick specific bosses/raids ' +
       'from a private menu. Selected ones turn red.\n\n' +
       'Once you have a role, anyone can `@mention` it to notify everyone ' +
       'signed up when that event is happening.\n\n' +
@@ -115,13 +115,17 @@ client.on('messageCreate', async (message) => {
 
     // Successfully posted — delete the user's !setup-roles command message after 5 seconds.
     setTimeout(() => {
-      message.delete().catch(() => {});
+      message.delete().catch((err) => {
+        console.error('Could not delete !setup-roles command message (likely missing Manage Messages permission):', err.message);
+      });
     }, 5000);
 
     // Auto-delete the posted menu message after 60 seconds.
     // This only removes the message — any roles already assigned stay.
     setTimeout(() => {
-      sentMessage.delete().catch(() => {});
+      sentMessage.delete().catch((err) => {
+        console.error('Could not delete role-menu message (likely missing Manage Messages permission):', err.message);
+      });
     }, MENU_MESSAGE_LIFETIME_MS);
   } catch (err) {
     console.error('Failed to post role menu:', err);
@@ -187,7 +191,9 @@ async function sendCategoryMenu(interaction, categoryKey, isUpdate) {
   // Auto-delete this private submenu message after 60 seconds.
   // This only removes the message — any roles already picked stay assigned.
   setTimeout(() => {
-    interaction.deleteReply().catch(() => {});
+    interaction.deleteReply().catch((err) => {
+      console.error('Could not delete private submenu message:', err.message);
+    });
   }, MENU_MESSAGE_LIFETIME_MS);
 }
 

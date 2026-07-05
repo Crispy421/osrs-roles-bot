@@ -12,8 +12,15 @@ wants that event.
 3. Under **Privileged Gateway Intents**, enable **Server Members Intent** and
    **Message Content Intent**.
 4. Go to **OAuth2 → URL Generator**, check scopes `bot`, and permissions
-   `Manage Roles`, `Send Messages`, `View Channels`, `Embed Links`. Use the
+   `Manage Roles`, `Send Messages`, `View Channels`, `Embed Links`,
+   `Manage Messages` (needed so the bot can delete the `!setup-roles`
+   command message and auto-delete the role-menu message). Use the
    generated URL to invite the bot to your server.
+
+   **If the bot is already in your server** and just needs `Manage
+   Messages` added, you don't need to re-invite it — just go to Server
+   Settings → Roles → click the bot's role → toggle on **Manage Messages**.
+   This takes effect immediately.
 
 ## 2. Create the roles in your server
 In Server Settings → Roles, create roles with these exact names (or edit
@@ -93,3 +100,24 @@ Anyone can run this — no permission check. The bot posts an embed with
   posted before auto-deleting (in milliseconds; default is 60000 = 60s).
 - Edit `CATEGORIES` to add/remove categories entirely, or add/remove roles
   within `bossing.roles` / `raids.roles` (label, role name, optional emoji).
+- The top-level **Bossing** button uses a custom emoji (ID
+  `1381713946591105187`). If the placeholder `name: 'bossing'` doesn't
+  match that emoji's actual name in your server, update it in
+  `CATEGORIES.bossing.buttonEmoji` — Discord looks up the emoji mainly by
+  ID, but keeping the name accurate avoids any rendering hiccups.
+- The top-level **Raids** button uses the 💰 money bags emoji.
+
+## Troubleshooting: "the !setup-roles message isn't deleting"
+This almost always means the bot is missing the **Manage Messages**
+permission in that channel (deleting a message it didn't send, or in some
+cases even its own message, requires it). Check your bot's logs — it
+logs an error like `Could not delete !setup-roles command message (likely
+missing Manage Messages permission)` when this happens.
+
+**Fix (confirmed working):** Server Settings → Roles → click the bot's
+role → toggle on **Manage Messages**. No re-invite needed, takes effect
+immediately.
+
+If that role-level toggle doesn't fix it, also check the specific
+channel's permission overrides — a channel can override and deny
+**Manage Messages** for the bot's role even if it's enabled server-wide.
